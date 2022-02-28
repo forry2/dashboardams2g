@@ -7,6 +7,8 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema.Builder;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
@@ -23,6 +26,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 public class AmsDashboardService {
     @Autowired
     private MongoTemplate mongoTemplate;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     public String findMatchingSwitchCsv(Date dateFrom) throws JsonProcessingException {
 
@@ -33,10 +37,12 @@ public class AmsDashboardService {
         aggrList.add(match(criteria));
         aggrList.add(project("DSWITC", "IDN_UTEN_ERN").andExclude("_id"));
         aggrList.add(sort(Sort.Direction.DESC, "DSWITC", "IDN_UTEN_ERN"));
+        List<Document> retList = mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAms2gSwitch", Document.class)
+                .getMappedResults();
+        log.debug("Found {} results", retList.size());
         JsonNode jsonTree = new ObjectMapper().readTree(
-                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(mongoTemplate
-                        .aggregate(newAggregation(aggrList), "dashboardAms2gSwitch", Document.class)
-                        .getMappedResults())
+                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(retList)
         );
         Builder csvSchemaBuilder = CsvSchema.builder();
         JsonNode firstObject = jsonTree.elements().next();

@@ -5,3 +5,16 @@ spring:
   data:
     mongodb:
       uri: ${CCG_MONGODB_URI:mongodb://localhost:27017/amsDashboard}
+logging:
+  level:
+    com:
+      dxc:
+        ams2g:
+          dashboardams2g:
+            service: DEBUG
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
