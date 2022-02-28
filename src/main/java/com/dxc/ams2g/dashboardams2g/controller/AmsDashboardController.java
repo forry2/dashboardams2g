@@ -1,7 +1,7 @@
 package com.dxc.ams2g.dashboardams2g.controller;
 
 import com.dxc.ams2g.dashboardams2g.service.AmsDashboardService;
-import org.bson.Document;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,10 +17,10 @@ public class AmsDashboardController {
     @Autowired
     private AmsDashboardService service;
 
-    @GetMapping(value = "matching")
-    public ResponseEntity<Document> findMatching(
+    @GetMapping(value = "switch/matching")
+    public ResponseEntity<String> findMatching(
             @RequestParam(name = "dateFrom", required = false) Date dateFrom
-    ) {
-        return null;
+    ) throws JsonProcessingException {
+        return ResponseEntity.ok(service.findMatchingSwitchCsv(dateFrom));
     }
 }
