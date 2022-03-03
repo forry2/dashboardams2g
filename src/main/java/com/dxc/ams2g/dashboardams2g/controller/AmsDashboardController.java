@@ -18,17 +18,23 @@ public class AmsDashboardController {
     private AmsDashboardService service;
 
     @GetMapping(value = "switch/matching/csv")
-    public ResponseEntity<String> findMatchingSwitch(
-            @RequestParam(name = "dateFrom", required = false) Date dateFrom
-    ) throws JsonProcessingException {
-        return ResponseEntity.ok(service.findMatchingSwitchCsv(dateFrom));
+    public ResponseEntity<String> findMatchingSwitchCsv() throws JsonProcessingException {
+        return ResponseEntity.ok(service.findMatchingSwitchCsv());
+    }
+
+    @GetMapping(value = "switch/sides/csv")
+    public ResponseEntity<String> findSidesSwitchCsv() throws JsonProcessingException {
+        return ResponseEntity.ok(service.findSidesSwitchCsv());
     }
 
     @GetMapping(value = "volture/matching/csv")
-    public ResponseEntity<String> findMatchingVolture(
-            @RequestParam(name = "dateFrom", required = false) Date dateFrom
-    ) throws JsonProcessingException {
-        return ResponseEntity.ok(service.findMatchingVoltureCsv(dateFrom));
+    public ResponseEntity<String> findMatchingVoltureCsv() throws JsonProcessingException {
+        return ResponseEntity.ok(service.findMatchingVoltureCsv());
+    }
+
+    @GetMapping(value = "volture/sides/csv")
+    public ResponseEntity<String> findSidesVoltureCsv() throws JsonProcessingException {
+        return ResponseEntity.ok(service.findSidesVoltureCsv());
     }
 
     @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}")
