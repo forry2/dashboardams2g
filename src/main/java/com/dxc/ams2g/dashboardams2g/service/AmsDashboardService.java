@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema.Builder;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.QuoteMode;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,15 +16,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperationContext;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
@@ -68,27 +75,76 @@ public class AmsDashboardService {
         return csvMapper.writerFor(JsonNode.class).with(csvSchema).writeValueAsString(jsonTree);
     }
 
-    public String findSidesVoltureCsv() throws JsonProcessingException {
-        return findSidesCsv("dashboardAms2gVolture");
+    public String findSidesVoltureCsvString() throws JsonProcessingException {
+        List<Document> retList = findSidesCsv("dashboardAms2gVolture");
+        log.debug("Found {} results", retList.size());
+        JsonNode jsonTree = new ObjectMapper().readTree(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(retList));
+        Builder csvSchemaBuilder = CsvSchema.builder();
+        JsonNode firstObject = jsonTree.elements().next();
+        firstObject.fieldNames().forEachRemaining(csvSchemaBuilder::addColumn);
+        CsvSchema csvSchema = csvSchemaBuilder.build().withHeader().withLineSeparator("|");
+        CsvMapper csvMapper = new CsvMapper();
+        return csvMapper.writerFor(JsonNode.class).with(csvSchema).writeValueAsString(jsonTree);
     }
 
-    public String findSidesSwitchCsv() throws JsonProcessingException {
-        return findSidesCsv("dashboardAms2gSwitch");
+    public String findSidesSwitchCsvString() throws JsonProcessingException {
+        List<Document> retList = findSidesCsv("dashboardAms2gSwitch");
+        log.debug("Found {} results", retList.size());
+        JsonNode jsonTree = new ObjectMapper().readTree(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(retList));
+        Builder csvSchemaBuilder = CsvSchema.builder();
+        JsonNode firstObject = jsonTree.elements().next();
+        firstObject.fieldNames().forEachRemaining(csvSchemaBuilder::addColumn);
+        CsvSchema csvSchema = csvSchemaBuilder.build().withHeader().withLineSeparator("|");
+        CsvMapper csvMapper = new CsvMapper();
+        return csvMapper.writerFor(JsonNode.class).with(csvSchema).writeValueAsString(jsonTree);
     }
 
-    public String findSidesCsv(String collectionName) throws JsonProcessingException {
+    public ByteArrayInputStream exportSidesSwitchCsvFile() {
+        return exportSidesCsvFile("dashboardAms2gSwitch");
+    }
+
+    public ByteArrayInputStream exportSidesVoltureCsvFile() {
+        return exportSidesCsvFile("dashboardAms2gVolture");
+    }
+
+    public ByteArrayInputStream exportSidesCsvFile(String collectionName) {
+        List<Document> retList = findSidesCsv(collectionName);
+        if (retList.size() == 0)
+            return null;
+        String headers = String.join(";", retList.get(0).keySet()) + ";";
+        final CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream(); CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), format)) {
+            csvPrinter.printRecord(headers);
+            for (Document doc : retList){
+                StringBuilder dataRow = new StringBuilder();
+                for (String fieldName : headers.split(";")){
+                    dataRow.append(doc.get(fieldName) == null ? "" : doc.get(fieldName).toString());
+                    dataRow.append(";");
+                }
+                csvPrinter.printRecord(dataRow.toString());
+            }
+            csvPrinter.flush();
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public List<Document> findSidesCsv(String collectionName) {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
         aggrList.add(match(new Criteria().and("lettura").ne(null)));
-
         AggregationOperation addExabeatMatchFieldOperation = context -> {
-            Document gtDocument = new Document("$gt", Arrays.asList("$dettaglioPubblicazione",null));
+            Document gtDocument = new Document("$gt", Arrays.asList("$dettaglioPubblicazione", null));
             Document condDoc = new Document("$cond", Arrays.asList(gtDocument, true, false));
-            Document exabeatMatchDoc = new Document ("exabeatMatch", condDoc);
+            Document exabeatMatchDoc = new Document("exabeatMatch", condDoc);
             return new Document("$addFields", exabeatMatchDoc);
         };
         aggrList.add(addExabeatMatchFieldOperation);
 
-        aggrList.add(project("IDN_UTEN_ERN", "DVOLTU")
+        String opDateName =  (collectionName.equals("dashboardAms2gSwitch")? "DSWITC" : "DVOLTU");
+
+        aggrList.add(project("IDN_UTEN_ERN", opDateName)
                 .and("lettura.DAT_LETTURA_SID").as("DAT_LETTURA_SID")
                 .and("lettura.COD_PRESTAZIONE").as("COD_PRESTAZIONE")
                 .and("lettura.DAT_LETTURA_ERN").as("DAT_LETTURA_ERN")
@@ -112,18 +168,9 @@ public class AmsDashboardService {
                 .and("lettura.TIP_LTU").as("TIP_LTU")
                 .and("lettura.WO_ACTIVITY").as("WO_ACTIVITY")
                 .and("exabeatMatch").as("exabeatMatch")
-                .andExclude("_id")
-        );
-        aggrList.add(sort(Sort.Direction.DESC, "DVOLTU").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
-        List<Document> retList = mongoTemplate.aggregate(newAggregation(aggrList), collectionName, Document.class).getMappedResults();
-        log.debug("Found {} results", retList.size());
-        JsonNode jsonTree = new ObjectMapper().readTree(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(retList));
-        Builder csvSchemaBuilder = CsvSchema.builder();
-        JsonNode firstObject = jsonTree.elements().next();
-        firstObject.fieldNames().forEachRemaining(csvSchemaBuilder::addColumn);
-        CsvSchema csvSchema = csvSchemaBuilder.build().withHeader();
-        CsvMapper csvMapper = new CsvMapper();
-        return csvMapper.writerFor(JsonNode.class).with(csvSchema).writeValueAsString(jsonTree);
+                .andExclude("_id"));
+        aggrList.add(sort(Sort.Direction.DESC, opDateName).and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
+        return mongoTemplate.aggregate(newAggregation(aggrList), collectionName, Document.class).getMappedResults();
     }
 
     public List<Document> findMatchingSwitchMaxUploadDate(Date maxUploadDate) {

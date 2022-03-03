@@ -4,10 +4,18 @@ import com.dxc.ams2g.dashboardams2g.service.AmsDashboardService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -24,7 +32,25 @@ public class AmsDashboardController {
 
     @GetMapping(value = "switch/sides/csv")
     public ResponseEntity<String> findSidesSwitchCsv() throws JsonProcessingException {
-        return ResponseEntity.ok(service.findSidesSwitchCsv());
+        return ResponseEntity.ok(service.findSidesSwitchCsvString());
+    }
+
+    @GetMapping(value = "switch/sides/csv/file")
+    public ResponseEntity<Resource> findSidesSwitchCsvFile() {
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sidesSwitchReport_" + currentDatetime + "_.csv")
+                .body(new InputStreamResource(service.exportSidesSwitchCsvFile()));
+    }
+
+    @GetMapping(value = "volture/sides/csv/file")
+    public ResponseEntity<Resource> findSidesVoltureCsvFile() {
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sidesVoltureReport_" + currentDatetime + "_.csv")
+                .body(new InputStreamResource(service.exportSidesVoltureCsvFile()));
     }
 
     @GetMapping(value = "volture/matching/csv")
@@ -34,34 +60,34 @@ public class AmsDashboardController {
 
     @GetMapping(value = "volture/sides/csv")
     public ResponseEntity<String> findSidesVoltureCsv() throws JsonProcessingException {
-        return ResponseEntity.ok(service.findSidesVoltureCsv());
+        return ResponseEntity.ok(service.findSidesVoltureCsvString());
     }
 
     @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}")
     public ResponseEntity<List<Document>> findMatchingSwitchMaxUploadDate(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
     ) {
-        return ResponseEntity.ok(service.findMatchingSwitchMaxUploadDate(maxUploadDate == null ? new Date(): maxUploadDate));
+        return ResponseEntity.ok(service.findMatchingSwitchMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate));
     }
 
     @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}/count")
     public ResponseEntity<Integer> findMatchingSwitchMaxUploadDateCount(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
-    ){
-        return ResponseEntity.ok(service.findMatchingSwitchMaxUploadDate(maxUploadDate == null ? new Date(): maxUploadDate).size());
+    ) {
+        return ResponseEntity.ok(service.findMatchingSwitchMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
     }
 
     @GetMapping(value = "volture/matching/maxUploadDate/{maxUploadDate}")
     public ResponseEntity<List<Document>> findMatchingVoltureMaxUploadDate(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
     ) {
-        return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date(): maxUploadDate));
+        return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate));
     }
 
     @GetMapping(value = "volture/matching/maxUploadDate/{maxUploadDate}/count")
     public ResponseEntity<Integer> findMatchingVoltureMaxUploadDateCount(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
-    ){
-        return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date(): maxUploadDate).size());
+    ) {
+        return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
     }
 }
