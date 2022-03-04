@@ -40,7 +40,7 @@ public class AmsDashboardController {
         String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sidesSwitchReport_" + currentDatetime + "_.csv")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sidesSwitchReport_" + currentDatetime + ".csv")
                 .body(new InputStreamResource(service.exportSidesSwitchCsvFile()));
     }
 
