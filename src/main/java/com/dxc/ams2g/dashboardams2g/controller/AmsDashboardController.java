@@ -70,6 +70,15 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findMatchingSwitchMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate));
     }
 
+    @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}/timeWindowDays/{timeWindowDays}")
+    public ResponseEntity<List<Document>> findSwitchCountersMaxUploadDateTimePeriod(
+            @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate,
+            @PathVariable(value = "timeWindowDays") int timeWindowDays
+    ) {
+        Date pMaxUploadDate = (maxUploadDate == null ? new Date() : maxUploadDate);
+        return ResponseEntity.ok(service.findSwitchCountersMaxUploadDateTimePeriod(pMaxUploadDate, timeWindowDays));
+    }
+
     @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}/count")
     public ResponseEntity<Integer> findMatchingSwitchMaxUploadDateCount(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
@@ -82,6 +91,15 @@ public class AmsDashboardController {
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
     ) {
         return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate));
+    }
+
+    @GetMapping(value = "volture/matching/maxUploadDate/{maxUploadDate}/timeWindowDays/{timeWindowDays}")
+    public ResponseEntity<List<Document>> findVoltureCountersMaxUploadDateTimePeriod(
+            @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate,
+            @PathVariable(value = "timeWindowDays") int timeWindowDays
+    ) {
+        Date pMaxUploadDate = (maxUploadDate == null ? new Date() : maxUploadDate);
+        return ResponseEntity.ok(service.findVoltureCountersMaxUploadDateTimePeriod(pMaxUploadDate, timeWindowDays));
     }
 
     @GetMapping(value = "volture/matching/maxUploadDate/{maxUploadDate}/count")

@@ -15,8 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
@@ -24,13 +23,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
 public class AmsDashboardService {
@@ -111,13 +111,13 @@ public class AmsDashboardService {
         List<Document> retList = findSidesCsv(collectionName);
         if (retList.size() == 0)
             return null;
-        String headers = String.join(";", retList.get(0).keySet()) + ";";
+        String headers = String.join(";", retList.get(0).keySet()) + ";filename;validfrom;";
         final CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream(); CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), format)) {
             csvPrinter.printRecord(headers);
-            for (Document doc : retList){
+            for (Document doc : retList) {
                 StringBuilder dataRow = new StringBuilder();
-                for (String fieldName : headers.split(";")){
+                for (String fieldName : headers.split(";")) {
                     dataRow.append(doc.get(fieldName) == null ? "" : doc.get(fieldName).toString());
                     dataRow.append(";");
                 }
@@ -142,7 +142,7 @@ public class AmsDashboardService {
         };
         aggrList.add(addExabeatMatchFieldOperation);
 
-        String opDateName =  (collectionName.equals("dashboardAms2gSwitch")? "DSWITC" : "DVOLTU");
+        String opDateName = (collectionName.equals("dashboardAms2gSwitch") ? "DSWITC" : "DVOLTU");
 
         aggrList.add(project("IDN_UTEN_ERN", opDateName)
                 .and("lettura.DAT_LETTURA_SID").as("DAT_LETTURA_SID")
@@ -168,6 +168,8 @@ public class AmsDashboardService {
                 .and("lettura.TIP_LTU").as("TIP_LTU")
                 .and("lettura.WO_ACTIVITY").as("WO_ACTIVITY")
                 .and("exabeatMatch").as("exabeatMatch")
+                .and("$dettaglioPubblicazione.filename").as("filename")
+                .and("$dettaglioPubblicazione.validfrom").as("validfrom")
                 .andExclude("_id"));
         aggrList.add(sort(Sort.Direction.DESC, opDateName).and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
         return mongoTemplate.aggregate(newAggregation(aggrList), collectionName, Document.class).getMappedResults();
@@ -175,7 +177,7 @@ public class AmsDashboardService {
 
     public List<Document> findMatchingSwitchMaxUploadDate(Date maxUploadDate) {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
-        aggrList.add(match(Criteria.where("dataUploadDateTime").lte(maxUploadDate)));
+        aggrList.add(match(where("dataUploadDateTime").lte(maxUploadDate)));
         aggrList.add(group("IDN_UTEN_ERN", "DSWITC", "dataSource").count().as("count"));
         AggregationOperation customGroupAggrOperation = context -> {
             Document idDoc = new Document();
@@ -203,13 +205,78 @@ public class AmsDashboardService {
             return new Document("$project", projDoc);
         };
         aggrList.add(customProjectOperation);
-        aggrList.add(match(Criteria.where("sourcesCount").gte(2)));
+        aggrList.add(match(where("sourcesCount").gte(2)));
         return mongoTemplate.aggregate(newAggregation(aggrList).withOptions(AggregationOptions.builder().allowDiskUse(true).build()), "dashboardAms2gSwitchRaw", Document.class).getMappedResults();
     }
 
+    public List<Document> findSwitchCountersMaxUploadDateTimePeriod(Date pMaxUploadDate, int timeWindowDays) {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+        aggrList.add(match(where("dataSource").is("sides")));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document uploadDatesVal = new Document("$push", "$dataUploadDateTime");
+            Document idVal = new Document("DSWITC", "$DSWITC").append("IDN_UTEN_ERN", "$IDN_UTEN_ERN");
+            Document groupVal = new Document("_id", idVal).append("uploadDates", uploadDatesVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+
+        aggrList.add(project("uploadDates").and("$_id.DSWITC").as("DSWITC").and("$_id.IDN_UTEN_ERN").as("IDN_UTEN_ERN").andExclude("_id"));
+
+        FacetOperation sidesOnlyFacetOperation = new FacetOperation();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
+            CountOperation countOperation = count().as("sidesOnlyCount");
+            sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        }
+        aggrList.add(sidesOnlyFacetOperation);
+        Document sidesOnlyCountList = mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAms2gSwitchRaw", Document.class).getUniqueMappedResult();
+
+        HashMap retMap = new HashMap<String, Document>();
+        sidesOnlyCountList.keySet().forEach(s -> {
+            List<Document> keyDoc = (List) sidesOnlyCountList.get(s);
+            retMap.put(s, new Document("sidesOnlyCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("sidesOnlyCount") : 0)));
+        });
+
+        FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
+            AggregationOperation customGroupOperation = aoc -> {
+                Document dataSources = new Document("$push", "$dataSource");
+                Document id = new Document("DSWITC", "$DSWITC").append("IDN_UTEN_ERN", "$IDN_UTEN_ERN");
+                Document group = new Document("_id", id).append("dataSources", dataSources);
+                return new Document("$group", group);
+            };
+            MatchOperation secondMatchOperation = match(where("dataSources").all("sides", "exabeat"));
+            CountOperation countOperation = count().as("matchesCount");
+            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation)
+                    .as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        }
+        Document sidesExabeatMatchList = mongoTemplate.aggregate(newAggregation(sidesExabeatMatchFacetOperation), "dashboardAms2gSwitchRaw", Document.class).getUniqueMappedResult();
+        sidesExabeatMatchList.keySet().forEach(s -> {
+            Document retMapDoc = (Document) retMap.get(s);
+            if (retMapDoc == null)
+                retMapDoc = new Document("sidesOnlyCount", 0);
+            List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
+            retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
+            retMap.put(s, retMapDoc);
+
+        });
+        List<Document> retList = new ArrayList<>();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+        }
+
+        return retList;
+    }
+
+
     public List<Document> findMatchingVoltureMaxUploadDate(Date maxUploadDate) {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
-        aggrList.add(match(Criteria.where("dataUploadDateTime").lte(maxUploadDate)));
+        aggrList.add(match(where("dataUploadDateTime").lte(maxUploadDate)));
         aggrList.add(group("IDN_UTEN_ERN", "DVOLTU", "dataSource").count().as("count"));
         AggregationOperation customGroupAggrOperation = context -> {
             Document idDoc = new Document();
@@ -237,8 +304,74 @@ public class AmsDashboardService {
             return new Document("$project", projDoc);
         };
         aggrList.add(customProjectOperation);
-        aggrList.add(match(Criteria.where("sourcesCount").gte(2)));
+        aggrList.add(match(where("sourcesCount").gte(2)));
         return mongoTemplate.aggregate(newAggregation(aggrList).withOptions(AggregationOptions.builder().allowDiskUse(true).build()), "dashboardAms2gVoltureRaw", Document.class).getMappedResults();
     }
+
+    public List<Document> findVoltureCountersMaxUploadDateTimePeriod(Date pMaxUploadDate, int timeWindowDays) {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+        aggrList.add(match(where("dataSource").is("sides")));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document uploadDatesVal = new Document("$push", "$dataUploadDateTime");
+            Document idVal = new Document("DVOLTU", "$DVOLTU").append("IDN_UTEN_ERN", "$IDN_UTEN_ERN");
+            Document groupVal = new Document("_id", idVal).append("uploadDates", uploadDatesVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+
+        aggrList.add(project("uploadDates").and("$_id.DVOLTU").as("DVOLTU").and("$_id.IDN_UTEN_ERN").as("IDN_UTEN_ERN").andExclude("_id"));
+
+        FacetOperation sidesOnlyFacetOperation = new FacetOperation();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
+            CountOperation countOperation = count().as("sidesOnlyCount");
+            sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        }
+        aggrList.add(sidesOnlyFacetOperation);
+        Document sidesOnlyCountList = mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAms2gVoltureRaw", Document.class).getUniqueMappedResult();
+
+        HashMap retMap = new HashMap<String, Document>();
+        sidesOnlyCountList.keySet().forEach(s -> {
+            List<Document> keyDoc = (List) sidesOnlyCountList.get(s);
+            retMap.put(s, new Document("sidesOnlyCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("sidesOnlyCount") : 0)));
+        });
+
+        FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
+            AggregationOperation customGroupOperation = aoc -> {
+                Document dataSources = new Document("$push", "$dataSource");
+                Document id = new Document("DVOLTU", "$DVOLTU").append("IDN_UTEN_ERN", "$IDN_UTEN_ERN");
+                Document group = new Document("_id", id).append("dataSources", dataSources);
+                return new Document("$group", group);
+            };
+            MatchOperation secondMatchOperation = match(where("dataSources").all("sides", "exabeat"));
+            CountOperation countOperation = count().as("matchesCount");
+            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation)
+                    .as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        }
+        Document sidesExabeatMatchList = mongoTemplate.aggregate(newAggregation(sidesExabeatMatchFacetOperation), "dashboardAms2gVoltureRaw", Document.class).getUniqueMappedResult();
+        sidesExabeatMatchList.keySet().forEach(s -> {
+            Document retMapDoc = (Document) retMap.get(s);
+            if (retMapDoc == null)
+                retMapDoc = new Document("sidesOnlyCount", 0);
+            List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
+            retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
+            retMap.put(s, retMapDoc);
+
+        });
+
+        List<Document> retList = new ArrayList<>();
+        for (int i = 0; i < timeWindowDays; i++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+        }
+
+        return retList;
+    }
+
 
 }
