@@ -2,6 +2,7 @@ package com.dxc.ams2g.dashboardams2g.controller;
 
 import com.dxc.ams2g.dashboardams2g.service.AmsDashboardService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.swagger.models.Response;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -107,5 +108,30 @@ public class AmsDashboardController {
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
     ) {
         return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
+    }
+
+    @GetMapping(value = "lettureTecnicheSides")
+    public ResponseEntity<List<Document>> findLettureTecnicheSides(){
+        return ResponseEntity.ok(service.findLettureTecnicheSides());
+    }
+
+    @GetMapping(value = "periodicheSidEB")
+    public ResponseEntity<List<Document>> findPeriodicheSidEB(){
+        return ResponseEntity.ok(service.findPeriodicheSidEB());
+    }
+
+    @GetMapping(value = "puntiOdlNonChiuso")
+    public ResponseEntity<List<Document>> findPuntiOdlNonChiuso(){
+        return ResponseEntity.ok(service.findPuntiOdlNonChiuso());
+    }
+
+    @GetMapping(value = "sidesInviiNull")
+    public ResponseEntity<List<Document>> findSidesInviiNull(){
+        return ResponseEntity.ok(service.findSidesInviiNull());
+    }
+
+    @GetMapping(value = "validazioneTotaleFonteTb")
+    public ResponseEntity<List<Document>> findValidazioneTotaleFonteTb(){
+        return ResponseEntity.ok(service.findValidazioneTotaleFonteTb());
     }
 }

@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -374,4 +375,107 @@ public class AmsDashboardService {
     }
 
 
+    public List<Document> findLettureTecnicheSides() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document firstDocVal = new Document("$first", "$$ROOT");
+            Document idVal = new Document("IDN_UTEN_ERN", "$IDN_UTEN_ERN").append("DAT_LETTURA", "$DAT_LETTURA");
+            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+        aggrList.add(replaceRoot("firstDoc"));
+        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
+        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
+        return mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAmsLettureTecnicheSides", Document.class)
+                .getMappedResults();
+    }
+
+    public List<Document> findPeriodicheSidEB() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document firstDocVal = new Document("$first", "$$ROOT");
+            Document idVal = new Document("IDN_UTEN_ERN", "$IDN_UTEN_ERN").append("DAT_LETTURA", "$DAT_LETTURA");
+            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+        aggrList.add(replaceRoot("firstDoc"));
+        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
+        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
+
+        return mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class)
+                .getMappedResults();
+    }
+
+    public List<Document> findPuntiOdlNonChiuso() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document firstDocVal = new Document("$first", "$$ROOT");
+            Document idVal = new Document("IDN_UTEN_ERN", "$IDN_UTEN_ERN").append("DAT_LETTURA", "$DAT_LETTURA");
+            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+        aggrList.add(replaceRoot("firstDoc"));
+        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
+        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
+
+        return mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorPuntiOdlNonChiuso", Document.class)
+                .getMappedResults();
+    }
+
+    public List<Document> findSidesInviiNull() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document firstDocVal = new Document("$first", "$$ROOT");
+            Document idVal = new Document("IDN_UTEN_ERN", "$IDN_UTEN_ERN").append("DAT_LETTURA_SID", "$DAT_LETTURA_SID");
+            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+        aggrList.add(replaceRoot("firstDoc"));
+        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
+        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA_SID", "IDN_UTEN_ERN"));
+
+        return mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorSidesInviiNull", Document.class)
+                .getMappedResults();
+    }
+
+    public List<Document> findValidazioneTotaleFonteTb() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        AggregationOperation customGroupAggrOperation = aoc -> {
+            Document firstDocVal = new Document("$first", "$$ROOT");
+            Document idVal = new Document("COD_PRIORITA", "$COD_PRIORITA").append("DES_CAUSA_SCARTO", "$DES_CAUSA_SCARTO");
+            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
+            return new Document("$group", groupVal);
+        };
+        aggrList.add(customGroupAggrOperation);
+        aggrList.add(replaceRoot("firstDoc"));
+        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
+        aggrList.add(sort(Sort.Direction.ASC, "DES_CAUSA_SCARTO", "COD_PRIORITA"));
+
+        return mongoTemplate
+                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorValidazioneTotaleFonteTb", Document.class)
+                .getMappedResults();
+    }
 }
