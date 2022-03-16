@@ -31,6 +31,11 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findMatchingSwitchCsv());
     }
 
+    @GetMapping(value = "switch/sides/json")
+    public ResponseEntity<List<Document>> findSidesSwitchesDocList(){
+        return ResponseEntity.ok(service.findSidesSwitchesDocList());
+    }
+
     @GetMapping(value = "switch/sides/csv")
     public ResponseEntity<String> findSidesSwitchCsv() throws JsonProcessingException {
         return ResponseEntity.ok(service.findSidesSwitchCsvString());
@@ -57,6 +62,11 @@ public class AmsDashboardController {
     @GetMapping(value = "volture/matching/csv")
     public ResponseEntity<String> findMatchingVoltureCsv() throws JsonProcessingException {
         return ResponseEntity.ok(service.findMatchingVoltureCsv());
+    }
+
+    @GetMapping(value = "volture/sides/json")
+    public ResponseEntity<List<Document>> findSidesVoltureDocList(){
+        return ResponseEntity.ok(service.findSidesVoltureDocList());
     }
 
     @GetMapping(value = "volture/sides/csv")

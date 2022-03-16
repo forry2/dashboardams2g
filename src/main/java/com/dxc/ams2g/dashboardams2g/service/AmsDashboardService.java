@@ -100,6 +100,11 @@ public class AmsDashboardService {
         return csvMapper.writerFor(JsonNode.class).with(csvSchema).writeValueAsString(jsonTree);
     }
 
+
+    public List<Document> findSidesSwitchesDocList() {
+        return findSidesCsv("dashboardAms2gSwitch");
+    }
+
     public ByteArrayInputStream exportSidesSwitchCsvFile() {
         return exportSidesCsvFile("dashboardAms2gSwitch");
     }
@@ -225,8 +230,8 @@ public class AmsDashboardService {
         aggrList.add(project("uploadDates").and("$_id.DSWITC").as("DSWITC").and("$_id.IDN_UTEN_ERN").as("IDN_UTEN_ERN").andExclude("_id"));
 
         FacetOperation sidesOnlyFacetOperation = new FacetOperation();
-        for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+        for (int counter = 0; counter < timeWindowDays; counter++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
             MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
             CountOperation countOperation = count().as("sidesOnlyCount");
             sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
@@ -241,8 +246,8 @@ public class AmsDashboardService {
         });
 
         FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
-        for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+        for (int counter = 0; counter < timeWindowDays; counter++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
             MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
             AggregationOperation customGroupOperation = aoc -> {
                 Document dataSources = new Document("$push", "$dataSource");
@@ -266,8 +271,8 @@ public class AmsDashboardService {
 
         });
         List<Document> retList = new ArrayList<>();
-        for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+        for (int counter = 0; counter < timeWindowDays; counter++) {
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
             retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
@@ -325,7 +330,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesOnlyFacetOperation = new FacetOperation();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
             MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
             CountOperation countOperation = count().as("sidesOnlyCount");
             sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
@@ -341,7 +346,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
             MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
             AggregationOperation customGroupOperation = aoc -> {
                 Document dataSources = new Document("$push", "$dataSource");
@@ -367,7 +372,7 @@ public class AmsDashboardService {
 
         List<Document> retList = new ArrayList<>();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
             retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
@@ -477,5 +482,10 @@ public class AmsDashboardService {
         return mongoTemplate
                 .aggregate(newAggregation(aggrList), "dashboardAmsMonitorValidazioneTotaleFonteTb", Document.class)
                 .getMappedResults();
+    }
+
+    public List<Document> findSidesVoltureDocList() {
+        return findSidesCsv("dashboardAms2gVolture");
+
     }
 }
