@@ -19,7 +19,6 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
-import javax.print.Doc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -231,7 +230,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesOnlyFacetOperation = new FacetOperation();
         for (int counter = 0; counter < timeWindowDays; counter++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(counter);
             MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
             CountOperation countOperation = count().as("sidesOnlyCount");
             sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
@@ -239,7 +238,8 @@ public class AmsDashboardService {
         aggrList.add(sidesOnlyFacetOperation);
         Document sidesOnlyCountList = mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAms2gSwitchRaw", Document.class).getUniqueMappedResult();
 
-        HashMap retMap = new HashMap<String, Document>();
+        HashMap<String, Document> retMap = new HashMap<String, Document>();
+        assert sidesOnlyCountList != null;
         sidesOnlyCountList.keySet().forEach(s -> {
             List<Document> keyDoc = (List) sidesOnlyCountList.get(s);
             retMap.put(s, new Document("sidesOnlyCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("sidesOnlyCount") : 0)));
@@ -247,7 +247,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
         for (int counter = 0; counter < timeWindowDays; counter++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(counter);
             MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
             AggregationOperation customGroupOperation = aoc -> {
                 Document dataSources = new Document("$push", "$dataSource");
@@ -272,10 +272,11 @@ public class AmsDashboardService {
         });
         List<Document> retList = new ArrayList<>();
         for (int counter = 0; counter < timeWindowDays; counter++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - counter - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(counter);
             retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
+        Collections.reverse(retList);
         return retList;
     }
 
@@ -330,7 +331,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesOnlyFacetOperation = new FacetOperation();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
             MatchOperation matchOperation = match(where("uploadDates").lte(runningDate));
             CountOperation countOperation = count().as("sidesOnlyCount");
             sidesOnlyFacetOperation = sidesOnlyFacetOperation.and(matchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
@@ -346,7 +347,7 @@ public class AmsDashboardService {
 
         FacetOperation sidesExabeatMatchFacetOperation = new FacetOperation();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
             MatchOperation matchOperation = match(where("dataUploadDateTime").lte(runningDate));
             AggregationOperation customGroupOperation = aoc -> {
                 Document dataSources = new Document("$push", "$dataSource");
@@ -372,10 +373,10 @@ public class AmsDashboardService {
 
         List<Document> retList = new ArrayList<>();
         for (int i = 0; i < timeWindowDays; i++) {
-            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(timeWindowDays - i - 1);
+            LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
             retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
-
+        Collections.reverse(retList);
         return retList;
     }
 
