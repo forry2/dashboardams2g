@@ -268,6 +268,9 @@ public class AmsDashboardService {
                 retMapDoc = new Document("sidesOnlyCount", 0);
             List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
             retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
+            Integer matchesCount = retMapDoc.getInteger("matchesCount");
+            Integer sidesOnlyCount =retMapDoc.getInteger("sidesOnlyCount");
+            retMapDoc.append("deltaCount",sidesOnlyCount - matchesCount);
             retMap.put(s, retMapDoc);
 
         });
@@ -278,29 +281,29 @@ public class AmsDashboardService {
         }
 
 
-        Integer maxSides = null;
-        Integer minSides = null;
-        Integer maxMatches = null;
-        Integer minMatches = null;
-        for (Document document : retMap.values()){
-            if (maxSides == null || minSides == null || maxMatches == null || minMatches == null)
-            {
-                maxSides = document.getInteger("sidesOnlyCount");
-                minSides = document.getInteger("sidesOnlyCount");
-                maxMatches = document.getInteger("matchesCount");
-                minMatches = document.getInteger("matchesCount");
-            }
-            else{
-                maxSides = (maxSides < document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : maxSides);
-                minSides = (minSides > document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : minSides);
-                maxMatches = (maxMatches < document.getInteger("matchesCount") ? document.getInteger("matchesCount") : maxMatches);
-                minMatches = (minMatches > document.getInteger("matchesCount") ? document.getInteger("matchesCount") : minMatches);
-            }
-        }
+//        Integer maxSides = null;
+//        Integer minSides = null;
+//        Integer maxMatches = null;
+//        Integer minMatches = null;
+//        for (Document document : retMap.values()){
+//            if (maxSides == null || minSides == null || maxMatches == null || minMatches == null)
+//            {
+//                maxSides = document.getInteger("sidesOnlyCount");
+//                minSides = document.getInteger("sidesOnlyCount");
+//                maxMatches = document.getInteger("matchesCount");
+//                minMatches = document.getInteger("matchesCount");
+//            }
+//            else{
+//                maxSides = (maxSides < document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : maxSides);
+//                minSides = (minSides > document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : minSides);
+//                maxMatches = (maxMatches < document.getInteger("matchesCount") ? document.getInteger("matchesCount") : maxMatches);
+//                minMatches = (minMatches > document.getInteger("matchesCount") ? document.getInteger("matchesCount") : minMatches);
+//            }
+//        }
 
         Collections.reverse(retList);
-        retList.add(new Document("minimums", new Document("sidesOnlyCount", minSides).append("matchesCount", minMatches)));
-        retList.add(new Document("maximums", new Document("sidesOnlyCount", maxSides).append("matchesCount", maxMatches)));
+//        retList.add(new Document("minimums", new Document("sidesOnlyCount", minSides).append("matchesCount", minMatches)));
+//        retList.add(new Document("maximums", new Document("sidesOnlyCount", maxSides).append("matchesCount", maxMatches)));
         return retList;
     }
 
@@ -391,6 +394,9 @@ public class AmsDashboardService {
                 retMapDoc = new Document("sidesOnlyCount", 0);
             List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
             retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
+            Integer matchesCount = retMapDoc.getInteger("matchesCount");
+            Integer sidesOnlyCount =retMapDoc.getInteger("sidesOnlyCount");
+            retMapDoc.append("deltaCount",sidesOnlyCount - matchesCount);
             retMap.put(s, retMapDoc);
 
         });
@@ -401,29 +407,29 @@ public class AmsDashboardService {
             retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
-
-        Integer maxSides = null;
-        Integer minSides = null;
-        Integer maxMatches = null;
-        Integer minMatches = null;
-        for (Document document : retMap.values()){
-            if (maxSides == null || minSides == null || maxMatches == null || minMatches == null)
-            {
-                maxSides = document.getInteger("sidesOnlyCount");
-                minSides = document.getInteger("sidesOnlyCount");
-                maxMatches = document.getInteger("matchesCount");
-                minMatches = document.getInteger("matchesCount");
-            }
-            else{
-                maxSides = (maxSides < document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : maxSides);
-                minSides = (minSides > document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : minSides);
-                maxMatches = (maxMatches < document.getInteger("matchesCount") ? document.getInteger("matchesCount") : maxMatches);
-                minMatches = (minMatches > document.getInteger("matchesCount") ? document.getInteger("matchesCount") : minMatches);
-            }
-        }
+//
+//        Integer maxSides = null;
+//        Integer minSides = null;
+//        Integer maxMatches = null;
+//        Integer minMatches = null;
+//        for (Document document : retMap.values()){
+//            if (maxSides == null || minSides == null || maxMatches == null || minMatches == null)
+//            {
+//                maxSides = document.getInteger("sidesOnlyCount");
+//                minSides = document.getInteger("sidesOnlyCount");
+//                maxMatches = document.getInteger("matchesCount");
+//                minMatches = document.getInteger("matchesCount");
+//            }
+//            else{
+//                maxSides = (maxSides < document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : maxSides);
+//                minSides = (minSides > document.getInteger("sidesOnlyCount") ? document.getInteger("sidesOnlyCount") : minSides);
+//                maxMatches = (maxMatches < document.getInteger("matchesCount") ? document.getInteger("matchesCount") : maxMatches);
+//                minMatches = (minMatches > document.getInteger("matchesCount") ? document.getInteger("matchesCount") : minMatches);
+//            }
+//        }
         Collections.reverse(retList);
-        retList.add(new Document("minimums", new Document("sidesOnlyCount", minSides).append("matchesCount", minMatches)));
-        retList.add(new Document("maximums", new Document("sidesOnlyCount", maxSides).append("matchesCount", maxMatches)));
+//        retList.add(new Document("minimums", new Document("sidesOnlyCount", minSides).append("matchesCount", minMatches)));
+//        retList.add(new Document("maximums", new Document("sidesOnlyCount", maxSides).append("matchesCount", maxMatches)));
         return retList;
     }
 
