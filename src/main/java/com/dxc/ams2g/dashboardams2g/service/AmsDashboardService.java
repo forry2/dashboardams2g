@@ -402,7 +402,7 @@ public class AmsDashboardService {
         return retList;
     }
 
-    public List<Document> findPeriodicheSidEB() {
+    public List<Document> dashboardAmsMonitorPeriodicheSidEB() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
         aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
@@ -416,7 +416,7 @@ public class AmsDashboardService {
         aggrList.add(customGroupAggrOperation);
         aggrList.add(replaceRoot("firstDoc"));
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
+        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC,"IDN_UTEN_ERN"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class).getMappedResults();
     }

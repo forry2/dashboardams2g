@@ -2,7 +2,6 @@ package com.dxc.ams2g.dashboardams2g.controller;
 
 import com.dxc.ams2g.dashboardams2g.service.AmsDashboardService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.swagger.models.Response;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -118,9 +117,9 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
     }
 
-    @GetMapping(value = "periodicheSidEB")
-    public ResponseEntity<List<Document>> findPeriodicheSidEB(){
-        return ResponseEntity.ok(service.findPeriodicheSidEB());
+    @GetMapping(value = "dashboardAmsMonitorPeriodicheSidEB")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorPeriodicheSidEB(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorPeriodicheSidEB());
     }
 
     @GetMapping(value = "puntiOdlNonChiuso")
