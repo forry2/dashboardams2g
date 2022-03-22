@@ -118,11 +118,6 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
     }
 
-    @GetMapping(value = "lettureTecnicheSides")
-    public ResponseEntity<List<Document>> findLettureTecnicheSides(){
-        return ResponseEntity.ok(service.findLettureTecnicheSides());
-    }
-
     @GetMapping(value = "periodicheSidEB")
     public ResponseEntity<List<Document>> findPeriodicheSidEB(){
         return ResponseEntity.ok(service.findPeriodicheSidEB());
@@ -141,5 +136,10 @@ public class AmsDashboardController {
     @GetMapping(value = "validazioneTotaleFonteTb")
     public ResponseEntity<List<Document>> findValidazioneTotaleFonteTb(){
         return ResponseEntity.ok(service.findValidazioneTotaleFonteTb());
+    }
+
+    @GetMapping(value = "dashboardAmsLettureTecnicheSides")
+    public ResponseEntity<List<Document>> dashboardAmsLettureTecnicheSides(){
+        return ResponseEntity.ok(service.dashboardAmsLettureTecnicheSides());
     }
 }

@@ -114,8 +114,7 @@ public class AmsDashboardService {
 
     public ByteArrayInputStream exportSidesCsvFile(String collectionName) {
         List<Document> retList = findSidesCsv(collectionName);
-        if (retList.size() == 0)
-            return null;
+        if (retList.size() == 0) return null;
         String headers = String.join(";", retList.get(0).keySet()) + ";filename;validfrom;";
         final CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream(); CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), format)) {
@@ -149,33 +148,7 @@ public class AmsDashboardService {
 
         String opDateName = (collectionName.equals("dashboardAms2gSwitch") ? "DSWITC" : "DVOLTU");
 
-        aggrList.add(project("IDN_UTEN_ERN", opDateName)
-                .and("lettura.DAT_LETTURA_SID").as("DAT_LETTURA_SID")
-                .and("lettura.COD_PRESTAZIONE").as("COD_PRESTAZIONE")
-                .and("lettura.DAT_LETTURA_ERN").as("DAT_LETTURA_ERN")
-                .and("lettura.COD_PRATICA").as("COD_PRATICA")
-                .and("lettura.COD_STATO_PRATICA").as("COD_STATO_PRATICA")
-                .and("lettura.DES_TRATT_ORARIO").as("DES_TRATT_ORARIO")
-                .and("lettura.DES_TRATT_LETTURA").as("DES_TRATT_LETTURA")
-                .and("lettura.FLG_RETT").as("FLG_RETT")
-                .and("lettura.FLG_LDV").as("FLG_LDV")
-                .and("lettura.FLG_LDF").as("FLG_LDF")
-                .and("lettura.DAT_CREAZIONE_REC").as("DAT_CREAZIONE_REC")
-                .and("lettura.DAT_ULT_AGG_REC").as("DAT_ULT_AGG_REC")
-                .and("lettura.COD_FLG_LTU_EFV").as("COD_FLG_LTU_EFV")
-                .and("lettura.COD_FLG_REGIME").as("COD_FLG_REGIME")
-                .and("lettura.COD_FLG_TIP_ODL").as("COD_FLG_TIP_ODL")
-                .and("lettura.LTU_ETR").as("LTU_ETR")
-                .and("lettura.SOURCE_CODE").as("SOURCE_CODE")
-                .and("lettura.SOURCE_DETAIL").as("SOURCE_DETAIL")
-                .and("lettura.SOURCE_TYPE").as("SOURCE_TYPE")
-                .and("lettura.TIPO_LAVORO").as("TIPO_LAVORO")
-                .and("lettura.TIP_LTU").as("TIP_LTU")
-                .and("lettura.WO_ACTIVITY").as("WO_ACTIVITY")
-                .and("exabeatMatch").as("exabeatMatch")
-                .and("$dettaglioPubblicazione.filename").as("filename")
-                .and("$dettaglioPubblicazione.validfrom").as("validfrom")
-                .andExclude("_id"));
+        aggrList.add(project("IDN_UTEN_ERN", opDateName).and("lettura.DAT_LETTURA_SID").as("DAT_LETTURA_SID").and("lettura.COD_PRESTAZIONE").as("COD_PRESTAZIONE").and("lettura.DAT_LETTURA_ERN").as("DAT_LETTURA_ERN").and("lettura.COD_PRATICA").as("COD_PRATICA").and("lettura.COD_STATO_PRATICA").as("COD_STATO_PRATICA").and("lettura.DES_TRATT_ORARIO").as("DES_TRATT_ORARIO").and("lettura.DES_TRATT_LETTURA").as("DES_TRATT_LETTURA").and("lettura.FLG_RETT").as("FLG_RETT").and("lettura.FLG_LDV").as("FLG_LDV").and("lettura.FLG_LDF").as("FLG_LDF").and("lettura.DAT_CREAZIONE_REC").as("DAT_CREAZIONE_REC").and("lettura.DAT_ULT_AGG_REC").as("DAT_ULT_AGG_REC").and("lettura.COD_FLG_LTU_EFV").as("COD_FLG_LTU_EFV").and("lettura.COD_FLG_REGIME").as("COD_FLG_REGIME").and("lettura.COD_FLG_TIP_ODL").as("COD_FLG_TIP_ODL").and("lettura.LTU_ETR").as("LTU_ETR").and("lettura.SOURCE_CODE").as("SOURCE_CODE").and("lettura.SOURCE_DETAIL").as("SOURCE_DETAIL").and("lettura.SOURCE_TYPE").as("SOURCE_TYPE").and("lettura.TIPO_LAVORO").as("TIPO_LAVORO").and("lettura.TIP_LTU").as("TIP_LTU").and("lettura.WO_ACTIVITY").as("WO_ACTIVITY").and("exabeatMatch").as("exabeatMatch").and("$dettaglioPubblicazione.filename").as("filename").and("$dettaglioPubblicazione.validfrom").as("validfrom").andExclude("_id"));
         aggrList.add(sort(Sort.Direction.DESC, opDateName).and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
         return mongoTemplate.aggregate(newAggregation(aggrList), collectionName, Document.class).getMappedResults();
     }
@@ -258,26 +231,24 @@ public class AmsDashboardService {
             };
             MatchOperation secondMatchOperation = match(where("dataSources").all("sides", "exabeat"));
             CountOperation countOperation = count().as("matchesCount");
-            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation)
-                    .as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         }
         Document sidesExabeatMatchList = mongoTemplate.aggregate(newAggregation(sidesExabeatMatchFacetOperation), "dashboardAms2gSwitchRaw", Document.class).getUniqueMappedResult();
         sidesExabeatMatchList.keySet().forEach(s -> {
-            Document retMapDoc = (Document) retMap.get(s);
-            if (retMapDoc == null)
-                retMapDoc = new Document("sidesOnlyCount", 0);
+            Document retMapDoc = retMap.get(s);
+            if (retMapDoc == null) retMapDoc = new Document("sidesOnlyCount", 0);
             List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
             retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
             Integer matchesCount = retMapDoc.getInteger("matchesCount");
-            Integer sidesOnlyCount =retMapDoc.getInteger("sidesOnlyCount");
-            retMapDoc.append("deltaCount",sidesOnlyCount - matchesCount);
+            Integer sidesOnlyCount = retMapDoc.getInteger("sidesOnlyCount");
+            retMapDoc.append("deltaCount", sidesOnlyCount - matchesCount);
             retMap.put(s, retMapDoc);
 
         });
         List<Document> retList = new ArrayList<>();
         for (int counter = 0; counter < timeWindowDays; counter++) {
             LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(counter);
-            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")), retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
 
@@ -384,19 +355,17 @@ public class AmsDashboardService {
             };
             MatchOperation secondMatchOperation = match(where("dataSources").all("sides", "exabeat"));
             CountOperation countOperation = count().as("matchesCount");
-            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation)
-                    .as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+            sidesExabeatMatchFacetOperation = sidesExabeatMatchFacetOperation.and(matchOperation, customGroupOperation, secondMatchOperation, countOperation).as(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         }
         Document sidesExabeatMatchList = mongoTemplate.aggregate(newAggregation(sidesExabeatMatchFacetOperation), "dashboardAms2gVoltureRaw", Document.class).getUniqueMappedResult();
         sidesExabeatMatchList.keySet().forEach(s -> {
-            Document retMapDoc = (Document) retMap.get(s);
-            if (retMapDoc == null)
-                retMapDoc = new Document("sidesOnlyCount", 0);
+            Document retMapDoc = retMap.get(s);
+            if (retMapDoc == null) retMapDoc = new Document("sidesOnlyCount", 0);
             List<Document> keyDoc = (List) sidesExabeatMatchList.get(s);
             retMapDoc.append("matchesCount", (keyDoc.size() > 0 ? keyDoc.get(0).get("matchesCount") : 0));
             Integer matchesCount = retMapDoc.getInteger("matchesCount");
-            Integer sidesOnlyCount =retMapDoc.getInteger("sidesOnlyCount");
-            retMapDoc.append("deltaCount",sidesOnlyCount - matchesCount);
+            Integer sidesOnlyCount = retMapDoc.getInteger("sidesOnlyCount");
+            retMapDoc.append("deltaCount", sidesOnlyCount - matchesCount);
             retMap.put(s, retMapDoc);
 
         });
@@ -404,7 +373,7 @@ public class AmsDashboardService {
         List<Document> retList = new ArrayList<>();
         for (int i = 0; i < timeWindowDays; i++) {
             LocalDateTime runningDate = LocalDateTime.of(pMaxUploadDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalTime.MIDNIGHT).minusDays(i);
-            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+            retList.add(new Document(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")), retMap.get(runningDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         }
 
 //
@@ -433,27 +402,6 @@ public class AmsDashboardService {
         return retList;
     }
 
-
-    public List<Document> findLettureTecnicheSides() {
-        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
-
-        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
-
-        AggregationOperation customGroupAggrOperation = aoc -> {
-            Document firstDocVal = new Document("$first", "$$ROOT");
-            Document idVal = new Document("IDN_UTEN_ERN", "$IDN_UTEN_ERN").append("DAT_LETTURA", "$DAT_LETTURA");
-            Document groupVal = new Document("_id", idVal).append("firstDoc", firstDocVal);
-            return new Document("$group", groupVal);
-        };
-        aggrList.add(customGroupAggrOperation);
-        aggrList.add(replaceRoot("firstDoc"));
-        aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
-        return mongoTemplate
-                .aggregate(newAggregation(aggrList), "dashboardAmsLettureTecnicheSides", Document.class)
-                .getMappedResults();
-    }
-
     public List<Document> findPeriodicheSidEB() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
@@ -470,9 +418,7 @@ public class AmsDashboardService {
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
         aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
 
-        return mongoTemplate
-                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class)
-                .getMappedResults();
+        return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class).getMappedResults();
     }
 
     public List<Document> findPuntiOdlNonChiuso() {
@@ -491,9 +437,7 @@ public class AmsDashboardService {
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
         aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
 
-        return mongoTemplate
-                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorPuntiOdlNonChiuso", Document.class)
-                .getMappedResults();
+        return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPuntiOdlNonChiuso", Document.class).getMappedResults();
     }
 
     public List<Document> findSidesInviiNull() {
@@ -512,9 +456,7 @@ public class AmsDashboardService {
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
         aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA_SID", "IDN_UTEN_ERN"));
 
-        return mongoTemplate
-                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorSidesInviiNull", Document.class)
-                .getMappedResults();
+        return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorSidesInviiNull", Document.class).getMappedResults();
     }
 
     public List<Document> findValidazioneTotaleFonteTb() {
@@ -533,13 +475,39 @@ public class AmsDashboardService {
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
         aggrList.add(sort(Sort.Direction.ASC, "DES_CAUSA_SCARTO", "COD_PRIORITA"));
 
-        return mongoTemplate
-                .aggregate(newAggregation(aggrList), "dashboardAmsMonitorValidazioneTotaleFonteTb", Document.class)
-                .getMappedResults();
+        return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorValidazioneTotaleFonteTb", Document.class).getMappedResults();
     }
 
     public List<Document> findSidesVoltureDocList() {
         return findSidesCsv("dashboardAms2gVolture");
 
+    }
+
+    public List<Document> dashboardAmsLettureTecnicheSides() {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
+
+        aggrList.add(group("$IDN_UTEN_ERN", "$DAT_LETTURA").first("$$ROOT").as("lettura"));
+
+        aggrList.add(
+                project()
+                        .andExclude("_id")
+                        .and("$_id.IDN_UTEN_ERN").as("IDN_UTEN_ERN")
+                        .and("$_id.DAT_LETTURA").as("DAT_LETTURA")
+                        .and("$lettura.dataUploadDateTime").as("dataUploadDateTime")
+                        .and("$lettura.COD_TIPO_LETTURA").as("COD_TIPO_LETTURA")
+                        .and("$lettura.DAT_SCARICO_LTU").as("DAT_SCARICO_LTU")
+                        .and("$lettura.NUM_MTC_APPAR").as("NUM_MTC_APPAR")
+                        .and("$lettura.COD_TIPO_FONTE").as("COD_TIPO_FONTE")
+                        .and("$lettura.COD_TIPO_FONTE_ERN").as("COD_TIPO_FONTE_ERN")
+                        .and("$lettura.NUM_ODL").as("NUM_ODL")
+                        .and("$lettura.COD_TIPOLOG_PRATIC").as("COD_TIPOLOG_PRATIC")
+                        .and("$lettura.DES_TIPOLOG_PRATIC").as("DES_TIPOLOG_PRATIC")
+        );
+
+        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
+
+        return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsLettureTecnicheSides", Document.class).getMappedResults();
     }
 }
