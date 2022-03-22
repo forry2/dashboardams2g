@@ -122,19 +122,19 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.dashboardAmsMonitorPeriodicheSidEB());
     }
 
-    @GetMapping(value = "puntiOdlNonChiuso")
-    public ResponseEntity<List<Document>> findPuntiOdlNonChiuso(){
-        return ResponseEntity.ok(service.findPuntiOdlNonChiuso());
+    @GetMapping(value = "dashboardAmsMonitorPuntiOdlNonChiuso")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorPuntiOdlNonChiuso(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorPuntiOdlNonChiuso());
     }
 
-    @GetMapping(value = "sidesInviiNull")
-    public ResponseEntity<List<Document>> findSidesInviiNull(){
-        return ResponseEntity.ok(service.findSidesInviiNull());
+    @GetMapping(value = "dashboardAmsMonitorSidesInviiNull")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorSidesInviiNull(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorSidesInviiNull());
     }
 
-    @GetMapping(value = "validazioneTotaleFonteTb")
-    public ResponseEntity<List<Document>> findValidazioneTotaleFonteTb(){
-        return ResponseEntity.ok(service.findValidazioneTotaleFonteTb());
+    @GetMapping(value = "dashboardAmsMonitorValidazioneTotaleFonteTb")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorValidazioneTotaleFonteTb(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorValidazioneTotaleFonteTb());
     }
 
     @GetMapping(value = "dashboardAmsLettureTecnicheSides")

@@ -421,7 +421,7 @@ public class AmsDashboardService {
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class).getMappedResults();
     }
 
-    public List<Document> findPuntiOdlNonChiuso() {
+    public List<Document> dashboardAmsMonitorPuntiOdlNonChiuso() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
         aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
@@ -435,12 +435,12 @@ public class AmsDashboardService {
         aggrList.add(customGroupAggrOperation);
         aggrList.add(replaceRoot("firstDoc"));
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA", "IDN_UTEN_ERN"));
+        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPuntiOdlNonChiuso", Document.class).getMappedResults();
     }
 
-    public List<Document> findSidesInviiNull() {
+    public List<Document> dashboardAmsMonitorSidesInviiNull() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
         aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
@@ -454,12 +454,12 @@ public class AmsDashboardService {
         aggrList.add(customGroupAggrOperation);
         aggrList.add(replaceRoot("firstDoc"));
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.ASC, "DAT_LETTURA_SID", "IDN_UTEN_ERN"));
+        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA_SID").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorSidesInviiNull", Document.class).getMappedResults();
     }
 
-    public List<Document> findValidazioneTotaleFonteTb() {
+    public List<Document> dashboardAmsMonitorValidazioneTotaleFonteTb() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
         aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
