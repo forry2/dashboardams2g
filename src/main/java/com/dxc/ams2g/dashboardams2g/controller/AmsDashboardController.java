@@ -117,21 +117,6 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findMatchingVoltureMaxUploadDate(maxUploadDate == null ? new Date() : maxUploadDate).size());
     }
 
-    @GetMapping(value = "dashboardAmsMonitorPeriodicheSidEB")
-    public ResponseEntity<List<Document>> dashboardAmsMonitorPeriodicheSidEB(){
-        return ResponseEntity.ok(service.dashboardAmsMonitorPeriodicheSidEB());
-    }
-
-    @GetMapping(value = "dashboardAmsMonitorPuntiOdlNonChiuso")
-    public ResponseEntity<List<Document>> dashboardAmsMonitorPuntiOdlNonChiuso(){
-        return ResponseEntity.ok(service.dashboardAmsMonitorPuntiOdlNonChiuso());
-    }
-
-    @GetMapping(value = "dashboardAmsMonitorSidesInviiNull")
-    public ResponseEntity<List<Document>> dashboardAmsMonitorSidesInviiNull(){
-        return ResponseEntity.ok(service.dashboardAmsMonitorSidesInviiNull());
-    }
-
     @GetMapping(value = "dashboardAmsMonitorValidazioneTotaleFonteTb")
     public ResponseEntity<List<Document>> dashboardAmsMonitorValidazioneTotaleFonteTb(){
         return ResponseEntity.ok(service.dashboardAmsMonitorValidazioneTotaleFonteTb());
@@ -140,5 +125,56 @@ public class AmsDashboardController {
     @GetMapping(value = "dashboardAmsLettureTecnicheSides")
     public ResponseEntity<List<Document>> dashboardAmsLettureTecnicheSides(){
         return ResponseEntity.ok(service.dashboardAmsLettureTecnicheSides());
+    }
+
+    @GetMapping(value = "dashboardAmsLettureTecnicheSides/csv/file")
+    public ResponseEntity<Resource> dashboardAmsLettureTecnicheSidesCsvFile(){
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=lettureTecnicheSidesReport_" + currentDatetime + ".csv")
+                .body(new InputStreamResource(service.dashboardAmsLettureTecnicheSidesCsvFile()));
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorPeriodicheSidEB")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorPeriodicheSidEB(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorPeriodicheSidEB());
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorPeriodicheSidEB/csv/file")
+    public ResponseEntity<Resource> dashboardAmsMonitorPeriodicheSidEBCsvFile(){
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=periodicheSidesReport_" + currentDatetime + ".csv")
+                .body(new InputStreamResource(service.dashboardAmsMonitorPeriodicheSidEBCsvFile()));
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorPuntiOdlNonChiusi")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorPuntiOdlNonChiusi(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorPuntiOdlNonChiusi());
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorPuntiOdlNonChiusi/csv/file")
+    public ResponseEntity<Resource> dashboardAmsMonitorPuntiOdlNonChiusiCsvFile(){
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=puntiOdlNonChiusiReport_" + currentDatetime + ".csv")
+                .body(new InputStreamResource(service.dashboardAmsMonitorPuntiOdlNonChiusoCsvFile()));
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorSidesInviiNull")
+    public ResponseEntity<List<Document>> dashboardAmsMonitorSidesInviiNull(){
+        return ResponseEntity.ok(service.dashboardAmsMonitorSidesInviiNull());
+    }
+
+    @GetMapping(value = "dashboardAmsMonitorSidesInviiNull/csv/file")
+    public ResponseEntity<Resource> dashboardAmsMonitorSidesInviiNullCsvFile(){
+        String currentDatetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sidesInviiNullReport_" + currentDatetime + ".csv")
+                .body(new InputStreamResource(service.dashboardAmsMonitorSidesInviiNullCsvFile()));
     }
 }

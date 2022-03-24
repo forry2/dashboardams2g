@@ -19,10 +19,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -421,7 +418,7 @@ public class AmsDashboardService {
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class).getMappedResults();
     }
 
-    public List<Document> dashboardAmsMonitorPuntiOdlNonChiuso() {
+    public List<Document> dashboardAmsMonitorPuntiOdlNonChiusi() {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
 
         aggrList.add(sort(Sort.Direction.DESC, "dataUploadDateTime"));
@@ -509,5 +506,47 @@ public class AmsDashboardService {
         aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsLettureTecnicheSides", Document.class).getMappedResults();
+    }
+
+    public ByteArrayInputStream dashboardAmsLettureTecnicheSidesCsvFile() {
+        List<Document> retList = dashboardAmsLettureTecnicheSides();
+        return inputStreamFromDocumentList(retList);
+    }
+
+    public ByteArrayInputStream dashboardAmsMonitorPeriodicheSidEBCsvFile() {
+        List<Document> retList = dashboardAmsMonitorPeriodicheSidEB();
+        return inputStreamFromDocumentList(retList);
+    }
+
+    public ByteArrayInputStream dashboardAmsMonitorPuntiOdlNonChiusiCsvFile(){
+        List<Document> retList = dashboardAmsMonitorPuntiOdlNonChiusi();
+        return inputStreamFromDocumentList(retList);
+    }
+
+    public ByteArrayInputStream dashboardAmsMonitorSidesInviiNullCsvFile(){
+        List<Document> retList = dashboardAmsMonitorSidesInviiNull();
+        return inputStreamFromDocumentList(retList);
+    }
+
+    private ByteArrayInputStream inputStreamFromDocumentList(List<Document> retList){
+        if (retList.size() == 0) return null;
+        String headers = String.join(";", retList.get(0).keySet()) ;
+        final CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream(); CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), format)) {
+            csvPrinter.printRecord(headers);
+            for (Document doc : retList) {
+                StringBuilder dataRow = new StringBuilder();
+                for (String fieldName : headers.split(";")) {
+                    dataRow.append(doc.get(fieldName) == null ? "" : doc.get(fieldName).toString());
+                    dataRow.append(";");
+                }
+                csvPrinter.printRecord(dataRow.toString());
+            }
+            csvPrinter.flush();
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
