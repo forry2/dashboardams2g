@@ -19,7 +19,11 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -276,6 +280,76 @@ public class AmsDashboardService {
     }
 
 
+    public List<Document> findSwitchCountersDswitcDateTimePeriod(int timeWindowDays) {
+        ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+        aggrList.add(match(where("lettura").ne(null)));
+
+        AggregationOperation customProjectOperation = aoc -> {
+            Document projectDoc = new Document("DSWITC", 1).append("dettaglioPubblicazione",
+                    new Document("$gt", Arrays.asList("$dettaglioPubblicazione", null)));
+            return new Document("$project", projectDoc);
+        };
+        aggrList.add(customProjectOperation);
+
+        AggregationOperation customGroupOperation = aoc -> {
+            Document idDoc = new Document("_id", "$DSWITC").append("sidesOnlyCount", new Document("$sum", 1)).append(
+                    "matchesCount",
+                    new Document("$sum",
+                            new Document("$cond",
+                                    new Document(
+                                            "if", new Document("$eq", Arrays.asList("$dettaglioPubblicazione", true))
+                                    ).append("then", 1).append("else", 0)
+                            )
+                    )
+            );
+            return new Document("$group", idDoc);
+        };
+        aggrList.add(customGroupOperation);
+
+        AggregationOperation customFinalProjectOperation = aoc -> {
+            Document projectDocumentValue = new Document(
+                    "DSWITC",
+                    new Document("$substr", Arrays.asList("$_id", 0, 10))
+            )
+                    .append("sidesOnlyCount", 1)
+                    .append("matchesCount", 1)
+                    .append("_id", 0)
+                    .append("deltaCount", new Document("$subtract", Arrays.asList("$sidesOnlyCount", "$matchesCount")));
+            return new Document("$project", projectDocumentValue);
+        };
+        aggrList.add(customFinalProjectOperation);
+
+        aggrList.add(sort(Sort.Direction.DESC, "DSWITC"));
+
+        aggrList.add(limit(timeWindowDays));
+
+        List<Document> retList = mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAms2gSwitch", Document.class).getMappedResults();
+        HashMap<String, Document> retMap = new HashMap<>();
+        for (Document doc : retList) {
+            retMap.put(doc.getString("DSWITC"), doc);
+        }
+
+        List<Document> filteredRetList = new ArrayList<>();
+        int maxNumberOfItems = 0;
+        for (LocalDate runningDate = LocalDate.parse(retList.get(1).getString("DSWITC")); maxNumberOfItems < timeWindowDays; runningDate = runningDate.minusDays(1)) {
+            maxNumberOfItems++;
+            Document doc = retMap.get(runningDate.toString());
+            if (doc == null)
+                filteredRetList.add(
+                        new Document(runningDate.toString(), new Document("sidesOnlyCount", 0)
+                                .append("matchesCount", 0)
+                                .append("deltaCount", 0))
+                );
+            else
+                filteredRetList.add(
+                        new Document(runningDate.toString(), new Document("sidesOnlyCount", doc.getInteger("sidesOnlyCount"))
+                                .append("matchesCount", doc.getInteger("matchesCount"))
+                                .append("deltaCount", doc.getInteger("deltaCount"))));
+        }
+        return filteredRetList;
+    }
+
     public List<Document> findMatchingVoltureMaxUploadDate(Date maxUploadDate) {
         ArrayList<AggregationOperation> aggrList = new ArrayList<>();
         aggrList.add(match(where("dataUploadDateTime").lte(maxUploadDate)));
@@ -413,7 +487,7 @@ public class AmsDashboardService {
         aggrList.add(customGroupAggrOperation);
         aggrList.add(replaceRoot("firstDoc"));
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC,"IDN_UTEN_ERN"));
+        aggrList.add(sort(Sort.Direction.DESC, "DAT_LETTURA").and(Sort.Direction.ASC, "IDN_UTEN_ERN"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorPeriodicheSidEB", Document.class).getMappedResults();
     }
@@ -518,19 +592,19 @@ public class AmsDashboardService {
         return inputStreamFromDocumentList(retList);
     }
 
-    public ByteArrayInputStream dashboardAmsMonitorPuntiOdlNonChiusiCsvFile(){
+    public ByteArrayInputStream dashboardAmsMonitorPuntiOdlNonChiusoCsvFile() {
         List<Document> retList = dashboardAmsMonitorPuntiOdlNonChiusi();
         return inputStreamFromDocumentList(retList);
     }
 
-    public ByteArrayInputStream dashboardAmsMonitorSidesInviiNullCsvFile(){
+    public ByteArrayInputStream dashboardAmsMonitorSidesInviiNullCsvFile() {
         List<Document> retList = dashboardAmsMonitorSidesInviiNull();
         return inputStreamFromDocumentList(retList);
     }
 
-    private ByteArrayInputStream inputStreamFromDocumentList(List<Document> retList){
+    private ByteArrayInputStream inputStreamFromDocumentList(List<Document> retList) {
         if (retList.size() == 0) return null;
-        String headers = String.join(";", retList.get(0).keySet()) ;
+        String headers = String.join(";", retList.get(0).keySet());
         final CSVFormat format = CSVFormat.DEFAULT.withQuoteMode(QuoteMode.MINIMAL);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream(); CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out), format)) {
             csvPrinter.printRecord(headers);
@@ -547,6 +621,78 @@ public class AmsDashboardService {
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public List<Document> findVoltureCountersDvoltuDateTimePeriod(int timeWindowDays) {
+        {
+            ArrayList<AggregationOperation> aggrList = new ArrayList<>();
+
+            aggrList.add(match(where("lettura").ne(null)));
+
+            AggregationOperation customProjectOperation = aoc -> {
+                Document projectDoc = new Document("DVOLTU", 1).append("dettaglioPubblicazione",
+                        new Document("$gt", Arrays.asList("$dettaglioPubblicazione", null)));
+                return new Document("$project", projectDoc);
+            };
+            aggrList.add(customProjectOperation);
+
+            AggregationOperation customGroupOperation = aoc -> {
+                Document idDoc = new Document("_id", "$DVOLTU").append("sidesOnlyCount", new Document("$sum", 1)).append(
+                        "matchesCount",
+                        new Document("$sum",
+                                new Document("$cond",
+                                        new Document(
+                                                "if", new Document("$eq", Arrays.asList("$dettaglioPubblicazione", true))
+                                        ).append("then", 1).append("else", 0)
+                                )
+                        )
+                );
+                return new Document("$group", idDoc);
+            };
+            aggrList.add(customGroupOperation);
+
+            AggregationOperation customFinalProjectOperation = aoc -> {
+                Document projectDocumentValue = new Document(
+                        "DVOLTU",
+                        new Document("$substr", Arrays.asList("$_id", 0, 10))
+                )
+                        .append("sidesOnlyCount", 1)
+                        .append("matchesCount", 1)
+                        .append("_id", 0)
+                        .append("deltaCount", new Document("$subtract", Arrays.asList("$sidesOnlyCount", "$matchesCount")));
+                return new Document("$project", projectDocumentValue);
+            };
+            aggrList.add(customFinalProjectOperation);
+
+            aggrList.add(sort(Sort.Direction.DESC, "DVOLTU"));
+
+            aggrList.add(limit(timeWindowDays));
+
+            List<Document> retList = mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAms2gVolture", Document.class).getMappedResults();
+            HashMap<String, Document> retMap = new HashMap<>();
+            for (Document doc : retList) {
+                retMap.put(doc.getString("DVOLTU"), doc);
+            }
+
+            List<Document> filteredRetList = new ArrayList<>();
+            int maxNumberOfItems = 0;
+            for (LocalDate runningDate = LocalDate.parse(retList.get(1).getString("DVOLTU")); maxNumberOfItems < timeWindowDays; runningDate = runningDate.minusDays(1)) {
+                maxNumberOfItems++;
+                Document doc = retMap.get(runningDate.toString());
+                if (doc == null)
+                    filteredRetList.add(
+                            new Document(runningDate.toString(), new Document("sidesOnlyCount", 0)
+                                    .append("matchesCount", 0)
+                                    .append("deltaCount", 0))
+                    );
+                else
+                    filteredRetList.add(
+                            new Document(runningDate.toString(), new Document("sidesOnlyCount", doc.getInteger("sidesOnlyCount"))
+                                    .append("matchesCount", doc.getInteger("matchesCount"))
+                                    .append("deltaCount", doc.getInteger("deltaCount"))));
+            }
+            return filteredRetList;
         }
     }
 }

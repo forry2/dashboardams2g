@@ -87,6 +87,15 @@ public class AmsDashboardController {
         return ResponseEntity.ok(service.findSwitchCountersMaxUploadDateTimePeriod(pMaxUploadDate, timeWindowDays));
     }
 
+    @GetMapping(value = "switch/matching/dswitcDate/timeWindowDays/{timeWindowDays}")
+    public ResponseEntity<List<Document>> findSwitchCountersDswitcDateTimePeriod(
+            @PathVariable(value = "timeWindowDays") int timeWindowDays
+    ) {
+        return ResponseEntity.ok(service.findSwitchCountersDswitcDateTimePeriod(timeWindowDays));
+    }
+
+
+
     @GetMapping(value = "switch/matching/maxUploadDate/{maxUploadDate}/count")
     public ResponseEntity<Integer> findMatchingSwitchMaxUploadDateCount(
             @PathVariable(value = "maxUploadDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") Date maxUploadDate
@@ -108,6 +117,14 @@ public class AmsDashboardController {
     ) {
         Date pMaxUploadDate = (maxUploadDate == null ? new Date() : maxUploadDate);
         return ResponseEntity.ok(service.findVoltureCountersMaxUploadDateTimePeriod(pMaxUploadDate, timeWindowDays));
+    }
+
+
+    @GetMapping(value = "volture/matching/dvoltuDate/timeWindowDays/{timeWindowDays}")
+    public ResponseEntity<List<Document>> findVoltureCountersDvoltuDateTimePeriod(
+            @PathVariable(value = "timeWindowDays") int timeWindowDays
+    ) {
+        return ResponseEntity.ok(service.findVoltureCountersDvoltuDateTimePeriod(timeWindowDays));
     }
 
     @GetMapping(value = "volture/matching/maxUploadDate/{maxUploadDate}/count")
