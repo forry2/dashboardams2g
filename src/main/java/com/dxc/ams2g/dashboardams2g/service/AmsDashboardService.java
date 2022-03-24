@@ -544,7 +544,15 @@ public class AmsDashboardService {
         aggrList.add(customGroupAggrOperation);
         aggrList.add(replaceRoot("firstDoc"));
         aggrList.add(project().andExclude("$_id", "dataUploadDateTime"));
-        aggrList.add(sort(Sort.Direction.ASC, "DES_CAUSA_SCARTO", "COD_PRIORITA"));
+
+        AggregationOperation customAddFieldsOperation = aoc -> {
+            return new Document ("$addFields", new Document("count", new Document("$toInt", "$COUNT_DISTINCTIDN_UTEN_ERN_")));
+        };
+        aggrList.add(customAddFieldsOperation);
+
+        aggrList.add(sort(Sort.Direction.DESC, "count"));
+
+        aggrList.add(project().andExclude("count"));
 
         return mongoTemplate.aggregate(newAggregation(aggrList), "dashboardAmsMonitorValidazioneTotaleFonteTb", Document.class).getMappedResults();
     }
